@@ -19,7 +19,9 @@ try:
     wait = WebDriverWait(driver, 20)
 
     item_list_container = wait.until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "ul[data-aut-id='itemsList1']"))
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, "ul[data-aut-id='itemsList1']")
+        )
     )
 
     time.sleep(2)
@@ -30,13 +32,31 @@ try:
 
     for index, card in enumerate(item_cards):
         try:
-            title_element = card.find_element(By.CSS_SELECTOR, "span[data-aut-id='itemTitle']")
-            data.append(title_element.text)
+            title_element = card.find_element(
+                By.CSS_SELECTOR, "span[data-aut-id='itemTitle']"
+            )
+            if "car cover" not in title_element.text.lower():
+                continue
+
+            # product_url = card.find_element(By.TAG_NAME, "a").get_attribute("href")
+            # product_image = card.find_element(By.TAG_NAME, "img").get_attribute("src")
+            product_price = card.find_element(
+                By.CSS_SELECTOR, "span[data-aut-id=itemPrice]"
+            )
+
+            product = {
+                "title": title_element.text,
+                "price": product_price.text,
+                # "url": product_url
+            }
+            data.append(product)
         except NoSuchElementException:
-            print(f"[ERROR] Could not find the title element ('itemTitle') in Card #{index + 1}.")
+            print(f"Could not find the title element {index}")
 
 except TimeoutException:
-    print("[ERROR] Timed out waiting for the page to load. The 'itemsList' container was not found.")
+    print(
+        "[ERROR] Timed out waiting for the page to load. The 'itemsList' container was not found."
+    )
 except Exception as e:
     print(f"An unexpected error occurred: {e}")
 finally:
@@ -44,4 +64,8 @@ finally:
         print("\nClosing the browser.")
         driver.quit()
 
-print(data)
+with open("product.txt", "w", encoding="utf-8") as file:
+    for product in data:
+        file.write(f"Title: {product['title']}\n")
+        file.write(f"Price: {product['price']}\n")
+        file.write("\n")
